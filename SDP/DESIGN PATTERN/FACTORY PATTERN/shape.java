@@ -1,0 +1,4 @@
+interface shape
+{
+    void drow();
+}

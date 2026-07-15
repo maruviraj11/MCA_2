@@ -1,0 +1,38 @@
+# How to Compile & Run in Terminal
+
+# 1. Navigate to the project folder
+cd c:\DatabaseProject\DatabaseProject
+
+# 2. Create the output folder (if it doesn't already exist)
+mkdir out
+
+# 3. Compile all files
+javac -d out src/db/*.java src/client/*.java
+
+# 4. Run the client (Make sure you include both MySQL and PostgreSQL Connector JARs in classpath)
+java -cp "out;lib\mysql-connector-java.jar;lib\postgresql.jar" client.DatabaseGUI
+
+//mysql
+Enter Database Type:
+mysql
+postgresql
+
+Enter Driver:
+com.mysql.cj.jdbc.Driver
+org.postgresql.Driver
+
+Enter URL:
+jdbc:mysql://localhost:3306/student
+jdbc:postgresql://localhost:5432/student
+
+Enter Username:
+root
+postgres
+
+Enter Password:
+
+1234,admin
+
+//postgres insert query
+INSERT INTO student_data (name, email, course)
+VALUES ('Kishan', 'kishan@gmail.com', 'BBA');
