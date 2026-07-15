@@ -1,0 +1,1214 @@
+subject :operating system all programs MCA-2
+prepared by:Viraj Maru
+
+unit 1
+---------------------------------------------------------------------
+
+1.Write a shell script which recursively delete *.obj , *.lst
+or all files with length of zero bytes
+-----------------------------------------------------------------------
+ans:
+find . -type f -name "*.obj" -delete
+find . -type f -name "*.lst" -delete
+find . -type f -size 0 -delete
+
+
+2.Write a shell script which concatenates all given files
+into a single file.
+Put the filename before every file.
+e.g. *** filename : xyz ***
+-------------------------------------------------------------------------
+ans:
+m52@linuxserver:~/os/pro2$ cat s1.sh
+#!/bin/sh
+
+output="output.txt"
+
+> "$output"
+
+for file in "$@"
+do
+            echo "*** filename : $file ***" >> "$output"
+                cat "$file" >> "$output"
+                    echo "" >> "$output"
+            done
+
+            echo "Done! Files merged in $output"
+			
+			
+3. Write a shell script for printing calendar for the month
+that entered as a char argument
+---------------------------------------------------------------
+ans:
+cal "$@"
+
+4.Write a shell script to generate the following output.
+Mon Aug 24 09:30:31 EST 1998
+Date is ...........................: 24-08-98
+Date is ...........................: 08/24/98
+Time is ...........................: 09 - 30 -31
+Time is ...........................: 09:30:31
+No of days elapsed in this year is : 234
+Serial no of day ( of week ) is : 31
+Day and Date is....................: Tue Aug 24, 1998
+Time in the form AM/PM ............: 09:30:31 AM
+Good Morning
+------------------------------------------------------------------------
+ans:
+date
+echo "DATE IS--------------------------:$(date +%d-%m-%y)"
+echo "DATE IS--------------------------:$(date +%d/%m/%y)"
+echo "TIME IS--------------------------:$(date +%H-%M-%S)"
+echo "TIME IS--------------------------:$(date +%I:%M:%S)"
+echo "NO OF DAYS ELAPSED IN THIS YEAR IS:$(date +%j)"
+echo "SERIAL NO OF DAYS ---------------:$(date +%d)"
+echo "DAY AND DATE IS------------------:$(date +%a%b%y,%Y)"
+echo "TIME IN THE FROM AM/PM-----------:$(date +%T,%p)"
+echo "GOOD MORNING"
+
+
+5.write a shell script to copy a duplicate file from two
+directory to third directory and remove both the old
+files. Pass names of the directory as command line
+arguments.
+
+------------------------------------------------------------------------
+ans:
+d1=$1
+d2=$2
+d3=$3
+
+mkdir -p "$d3"
+for f in "$d1"/*;
+do
+        name=$(basename "$f")
+        if [ -f "$d2/$name" ];
+        then
+                cp "$f" "$d3/"
+                rm "$f" "$d2/$name"
+        fi
+        echo "File moved: $name"
+done
+
+
+7.Write a program to display all the files from given
+directory.(display file only if it is ascii)
+if directory is not passed as argument then display from
+current dir.
+--------------------------------------------------------------
+ans:
+dir="${1:-.}"
+
+[ -d "$dir" ] || { echo "Invalid directory"; exit 1; }
+
+for f in "$dir"/*; do
+              [ -f "$f" ] && file "$f" | grep -q "ASCII" && echo "$(basename "$f")"
+done
+
+
+8.Write a shell script to find the sum of first n numbers ,
+where n is accepted from the user. 1+2+3...n
+--------------------------------------------------------------------------------------
+
+ans:
+#!/bin/bash
+read -p "Enter a number: " n
+sum=0
+for (( i=1; i<=n; i++ ))
+do
+                sum=$(( sum+i ))
+        done
+        echo "Sum: $sum"
+$
+
+9.Write a shell script to accept marks for C++,MIS,UNIX.
+Calculate the
+average of marks and display the message as follows.
+- if average is 60 or above then 'first class'
+- if average is 50 and less than 60 then 'second class'
+- if average is 40 and less than 50 then 'third class'
+- otherwise display 'fail
+-----------------------------------------------------------
+ans:
+echo "Enter marks for C++:"
+read cpp
+
+echo "Enter marks for MIS:"
+read mis
+
+echo "Enter marks for UNIX:"
+read unix
+
+avg=$(( (cpp + mis + unix) / 3 ))
+
+echo "Average marks = $avg"
+
+
+if [ $avg -ge 60 ]
+then
+        echo "First Class"
+elif [ $avg -ge 50 ] && [ $avg -lt 60 ]
+then
+        echo "Second Class"
+elif [ $avg -ge 40 ] && [ $avg -lt 50 ]
+then
+        echo "Third Class"
+else
+        echo "Fail"
+fi
+
+
+10.Write a shell script to display a birthday message to all
+the users having birthday same as the system date and
+are currently logged in .
+birthdate detail is stored in a file.
+structure: username , login name , birthdate separated
+by ':'
+
+------------------------------------------------------------------
+ans:
+today=$(date +%m-%d)
+
+while IFS=":" read name login bdate
+do
+        if [ "$bdate" = "$today" ]
+        then
+                if who | grep "$login" > /dev/null
+                then
+                        echo "Happy Birthday $name"
+                fi
+        fi
+done < birth.txt
+
+11.Write a shell script to create a file.
+Membercode ,membername, address, magazinename,
+monthofpubl, issuedat and - provide facility to
+insert,delete,update and search on this file
+---------------------------------------------------------------------------
+ans:
+file="member.txt"
+
+touch $file
+
+echo "1.Insert"
+echo "2.Delete"
+echo "3.Update"
+echo "4.Search"
+echo "Enter choice:"
+read ch
+
+case $ch in
+
+        1)
+                echo "Enter Membercode:"
+                read code
+                echo "Enter Membername:"
+                read name
+                echo "Enter Address:"
+                read add
+                echo "Enter Magazine name:"
+                read mag
+                echo "Enter Month of publication:"
+                read mon
+                echo "Enter Issue date:"
+                read date
+
+                echo "$code:$name:$add:$mag:$mon:$date" >> $file
+                echo "Record Inserted"
+                ;;
+
+        2)
+                echo "Enter Membercode to delete:"
+                read code
+                grep -v "^$code" $file > temp
+                mv temp $file
+                echo "Record Deleted"
+                ;;
+
+        3)
+                echo "Enter Membercode to update:"
+                read code
+                grep -v "^$code" $file > temp
+
+                echo "Enter new Membername:"
+                read name
+                echo "Enter Address:"
+                read add
+                echo "Enter Magazine name:"
+                read mag
+                echo "Enter Month:"
+                read mon
+                echo "Enter Issue date:"
+                read date
+
+                echo "$code:$name:$add:$mag:$mon:$date" >> temp
+                mv temp $file
+                echo "Record Updated"
+                ;;
+
+        4)
+                echo "Enter Membercode to search:"
+                read code
+                grep "^$code" $file
+                ;;
+
+        *)
+                echo "Invalid Choice"
+                ;;
+
+        esac
+
+
+12.Write a shell script that accept an option number , and
+the names of two
+files as command line arguments . Depending on the
+option the following
+option should be taken.
+option no action
+1 copy first file to second file
+2 concatenate the files
+3 rename 1st file as 2nd file
+4 display no. of lines in both the files.
+-----------------------------------------------------------
+ans:
+
+
+op=$1
+file1=$2
+file2=$3
+
+case $op in
+
+             1)
+                cp $file1 $file2
+                echo "File copied successfully"
+                ;;
+
+             2)
+                cat $file1 $file2
+                ;;
+
+             3)
+                mv $file1 $file2
+                echo "File renamed"
+                ;;
+
+             4)
+                echo "Lines in $file1:"
+                wc -l $file1
+
+                echo "Lines in $file2:"
+                wc -l $file2
+                 ;;
+
+              *)
+                echo "Invalid option"
+                ;;
+
+                esac
+				
+				
+13.Write a unix shell script to keep on accepting lines of
+text and write the text into a data file until the user
+inputs "end".
+The script should count the number of lines input and
+display them.[ do not use wc ]
+-----------------------------------------------------------------
+ans:
+
+count=0
+file="data.txt"
+
+echo "Enter text (type 'end' to stop):"
+
+while true
+do
+        read line
+
+        if [ "$line" = "end" ]
+        then
+        break
+        fi
+
+        echo "$line" >> $file
+        count=$((count+1))
+
+done
+
+echo "Total number of lines entered: $count"
+
+
+unit 2
+
+-----------------------------------------------------------------------
+
+1.Sharing file data between processes
+-----------------------------
+-------------------------------------------
+
+ans
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int main()
+{
+            int fd, fd2;
+            char buffer[50];
+
+            fd = open("shared.txt", O_RDWR | O_CREAT, 0777);
+
+             fd2 = dup(fd);
+
+
+            write(fd, "Hello from Process\n", 19);
+
+
+            lseek(fd2, 0, SEEK_SET);
+
+
+           read(fd2, buffer, 19);
+
+           printf("Data read using duplicated descriptor: %s\n", buffer);
+
+           close(fd);
+           close(fd2);
+
+          return 0;
+}
+
+
+2.Show the difference when you are using low level I/O
+function and high level I/O function
+-------------------------------------------------------------------------
+
+ans:
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+int main()
+{
+            int fd;
+            char data[] = "Hello Linux\n";
+            char buffer[50];
+
+             /* -------- High Level I/O -------- */
+             FILE *fp;
+
+             fp = fopen("high.txt","w");
+             fprintf(fp,"Hello using High Level IO\n");
+             fclose(fp);
+
+             printf("High Level I/O write completed\n");
+
+
+             /* -------- Low Level I/O -------- */
+
+            fd = open("low.txt", O_RDWR | O_CREAT, 0777);
+
+            write(fd, data, sizeof(data));
+
+             lseek(fd,0,SEEK_SET);
+
+             read(fd, buffer, sizeof(data));
+
+             printf("Low Level I/O Read: %s", buffer);
+
+            close(fd);
+
+            return 0;
+}
+
+3.Show file buffering using exec call
+------------------------------------------------------------------
+ans:
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+
+int main() {
+
+            FILE *fp = fopen("output.txt", "w");
+            fprintf(fp, "--- HIGH LEVEL: This will DISAPPEAR ---\n");
+
+            int fd = open("output.txt", O_WRONLY | O_APPEND | O_CREAT, 0644);
+            char *msg = "--- LOW LEVEL: This will SURVIVE ---\n";
+            write(fd, msg, strlen(msg));
+
+            printf("Executing 'ls' now... The RAM buffer is about to be wiped!\n");
+            execl("/bin/ls", "ls", NULL);
+            printf("After the execution..");
+            return 0;
+
+}
+
+4.Show the value of environment variable after fork
+---------------------------------------------------------------------------
+ans:
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main() {
+            setenv("MYENV","HELLO",1);
+                pid_t pid = fork();
+                    if (pid == 0) 
+					{
+                        printf("Environment Variable from Child: %s\n",getenv("MYENV"));
+                    }
+					else 
+					{
+                       printf("Environment Variable from Parent: %s\n",getenv("MYENV"));
+                     }
+
+                    return 0;
+}
+
+5.List out how many user currently login with Unix
+system and display their details
+----------------------------------------------------------------
+ans:
+#include <stdlib.h>
+
+int main() {
+
+            system("who | cut -d' ' -f1 | sort -u | wc -l");
+                system("for user in $(who | cut -d' ' -f1 | sort -u); do grep \"^$user:\" /etc/passwd; done");
+                    return 0;
+}
+
+6. Write a program to handle illegal instruction execution
+ans:
+
+#include<stdio.h>
+#include<signal.h>
+#include<stdlib.h>
+
+void handle_sigill(int sig)
+{
+        printf("Caught Illegal Instruction signal(SIGILL) \n");
+        exit(1);
+}
+int main()
+{
+        signal(SIGILL,handle_sigill);
+        printf("Generating illegal Instruction .. \n");
+        raise(SIGILL);
+        printf("This line will not Execute \n");
+        return 0;
+}
+
+
+unit-3
+------------------------------------------------------------------------------
+
+1.Implement sorting using pipe
+---------------------------------------------------------------
+ans:
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main() {
+    int fd[2];
+    pid_t pid;
+
+    pipe(fd);
+
+    pid = fork();
+
+    if(pid > 0) {
+
+        close(fd[0]);
+
+        char data[] = "5\n2\n8\n1\n4\n";
+        write(fd[1], data, sizeof(data));
+
+        close(fd[1]);
+    }
+    else {
+
+        close(fd[1]);
+
+        dup2(fd[0], 0);
+
+        execlp("sort", "sort", NULL);
+
+        close(fd[0]);
+    }
+
+    return 0;
+}
+
+2.Display the result of “who” command in total no of
+words by using pipe
+----------------------------------------------------------
+
+ans:
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+int main() {
+    int fd[2];
+    pipe(fd);
+
+    if(fork() == 0) {
+
+        close(fd[1]);
+        dup2(fd[0], 0);
+        execlp("wc", "wc", "-w", NULL);
+    }
+    else {
+
+        close(fd[0]);
+        dup2(fd[1], 1);
+        execlp("who", "who", NULL);
+    }
+
+    return 0;
+}
+
+3.Implement two pipes using parent and child process
+-------------------------------------------------------------------
+
+ans:
+m52@linuxserver:~/os/pro_u3_p3$ cat p3.c
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+
+int main() {
+    int p1[2], p2[2];
+    char msg1[] = "Hello Child";
+    char msg2[] = "Hello Parent";
+    char buffer[100];
+
+    pipe(p1);
+    pipe(p2);
+
+    if(fork() == 0) {
+
+        read(p1[0], buffer, sizeof(buffer));
+        printf("Child received: %s\n", buffer);
+
+        write(p2[1], msg2, strlen(msg2)+1);
+    }
+    else {
+
+        write(p1[1], msg1, strlen(msg1)+1);
+
+        read(p2[0], buffer, sizeof(buffer));
+        printf("Parent received: %s\n", buffer);
+    }
+
+    return 0;
+}
+
+4.Implement named pipe (FIFO)
+-------------------------------------------------------
+
+ans:
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+int main() {
+
+    char buffer[20];
+
+    mkfifo("my_fifo", 0666);
+
+    if (fork() == 0) {
+
+        int fd = open("my_fifo", O_WRONLY);
+        write(fd, "Hello FIFO!", 12);
+        close(fd);
+    }
+    else {
+
+        int fd = open("my_fifo", O_RDONLY);
+        read(fd, buffer, 20);
+        printf("Parent received: %s\n", buffer);
+        close(fd);
+
+    }
+
+    return 0;
+}
+
+unit-4
+------------------------------------------------------------------------------------------
+1.Create semaphore through C program
+get the value of semaphore and set the value of
+semaphore Identify resource using by use through
+semaphore
+---------------------------------------------------------------
+ 
+ans:
+m52@linuxserver:~/os/pro_u4_p1$ cat p1.c
+#include<stdio.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
+// union for semctl
+union semun {
+    int val;
+};
+
+int main() {
+    key_t key;
+    int semid;
+    union semun arg;
+
+
+    key = ftok("semfile", 65);
+
+
+    semid = semget(key, 1, 0666 | IPC_CREAT);
+
+
+    arg.val = 1;
+    semctl(semid, 0, SETVAL, arg);
+
+    printf("Semaphore created successfully\n");
+
+
+    int val = semctl(semid, 0, GETVAL);
+    printf("Initial Semaphore value: %d\n", val);
+
+
+    struct sembuf sb;
+    sb.sem_num = 0;
+    sb.sem_op = -1;
+    sb.sem_flg = 0;
+
+    printf("Process trying to access resource...\n");
+    semop(semid, &sb, 1);
+
+    printf("Resource locked by process\n");
+
+
+    val = semctl(semid, 0, GETVAL);
+    printf("Semaphore value after wait: %d\n", val);
+
+
+    sb.sem_op = 1;
+    semop(semid, &sb, 1);
+
+    printf("Resource released by process\n");
+
+
+    val = semctl(semid, 0, GETVAL);
+    printf("Semaphore value after signal: %d\n", val);
+
+    return 0;
+}
+#include<stdio.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
+// union for semctl
+union semun {
+    int val;
+};
+
+int main() {
+    key_t key;
+    int semid;
+    union semun arg;
+
+
+    key = ftok("semfile", 65);
+
+
+    semid = semget(key, 1, 0666 | IPC_CREAT);
+
+
+    arg.val = 1;
+    semctl(semid, 0, SETVAL, arg);
+
+    printf("Semaphore created successfully\n");
+
+
+    int val = semctl(semid, 0, GETVAL);
+    printf("Initial Semaphore value: %d\n", val);
+
+
+    struct sembuf sb;
+    sb.sem_num = 0;
+    sb.sem_op = -1;
+    sb.sem_flg = 0;
+
+    printf("Process trying to access resource...\n");
+    semop(semid, &sb, 1);
+
+    printf("Resource locked by process\n");
+
+
+    val = semctl(semid, 0, GETVAL);
+    printf("Semaphore value after wait: %d\n", val);
+
+
+    sb.sem_op = 1;
+    semop(semid, &sb, 1);
+
+    printf("Resource released by process\n");
+
+
+    val = semctl(semid, 0, GETVAL);
+    printf("Semaphore value after signal: %d\n", val);
+
+    return 0;
+}
+
+
+2.Create one message queue and display its property
+using proper structure
+------------------------------------------------------------------------------
+
+ans:
+m52@linuxserver:~/os/pro_u4_p2$ cat p2.c
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+
+int main() {
+    key_t key;
+    int msgid;
+
+
+    struct msqid_ds buf;
+
+
+    key = ftok("msgfile", 65);
+
+
+    msgid = msgget(key, 0666 | IPC_CREAT);
+    printf("Message Queue created successfully\n");
+
+
+    msgctl(msgid, IPC_STAT, &buf);
+
+
+    printf("\n--- Message Queue Properties ---\n");
+
+    printf("Current number of messages: %ld\n", buf.msg_qnum);
+    printf("Maximum bytes allowed: %ld\n", buf.msg_qbytes);
+    printf("Last sender PID: %d\n", buf.msg_lspid);
+    printf("Last receiver PID: %d\n", buf.msg_lrpid);
+
+    return 0;
+}
+
+3.Create 10 message queue and remove each process
+through system() command and
+try to get status when applying the msgctl function to
+kill the queue.
+------------------------------------------------------------------
+
+ans:
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdlib.h>
+
+int main() {
+    key_t key;
+    int msgid[10];
+    int i;
+    struct msqid_ds buf;
+
+
+    for(i = 0; i < 10; i++) {
+        key = ftok("msgfile", 65 + i);
+        msgid[i] = msgget(key, 0666 | IPC_CREAT);
+
+        if(msgid[i] == -1) {
+            printf("Queue %d creation failed\n", i);
+        } else {
+            printf("Queue %d created with ID: %d\n", i, msgid[i]);
+        }
+    }
+
+
+    for(i = 0; i < 10; i++) {
+        char cmd[50];
+
+        sprintf(cmd, "ipcrm -q %d", msgid[i]);
+        system(cmd);
+
+        printf("Queue %d removed using system()\n", i);
+    }
+      for(i = 0; i < 10; i++) {
+        int status = msgctl(msgid[i], IPC_STAT, &buf);
+
+        if(status == -1) {
+            printf("Queue %d does NOT exist (removed successfully)\n", i);
+        } else {
+            printf("Queue %d still exists\n", i);
+        }
+    }
+
+    return 0;
+}
+
+4. Send and receive messages using the message queue.
+-------------------------------------------------------------------------
+
+ans:
+
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <string.h>
+
+struct msg_buffer {
+    long msg_type;
+    char msg_text[100];
+};
+
+int main() {
+    key_t key;
+    int msgid;
+    struct msg_buffer message;
+
+
+    key = ftok("msgfile", 65);
+
+
+    msgid = msgget(key, 0666 | IPC_CREAT);
+
+    message.msg_type = 1;
+
+    printf("Enter message: ");
+    fgets(message.msg_text, sizeof(message.msg_text), stdin);
+
+    msgsnd(msgid, &message, sizeof(message.msg_text), 0);
+    printf("Message sent successfully\n");
+
+
+    msgrcv(msgid, &message, sizeof(message.msg_text), 1, 0);
+
+    printf("Message received: %s\n", message.msg_text);
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
