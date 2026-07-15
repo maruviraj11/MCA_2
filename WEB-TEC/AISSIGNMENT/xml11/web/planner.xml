@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE planner SYSTEM "planner.dtd">
+
+<planner>
+
+    <year value="2026">
+
+        <date month="04" day="09">
+            <note>Project Submission</note>
+        </date>
+
+        <date month="05" day="15">
+            <note>Exam Preparation</note>
+        </date>
+
+    </year>
+
+    <year value="2027">
+
+        <date month="01" day="10">
+            <note>New Semester Start</note>
+        </date>
+
+    </year>
+
+</planner>

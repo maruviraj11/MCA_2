@@ -1,0 +1,612 @@
+COMPLAINT MANAGEMENT PORTAL (CMP) - FULL PROJECT FUNCTION OVERVIEW
+Date: 2026-04-05
+
+============================================================
+0) QUICK ARCHITECTURE SUMMARY
+============================================================
+Tech stack:
+  - Java Servlet/JSP web app (web.xml based, Servlet 2.5 style)
+  - JDBC (MySQL)
+  - NetBeans/Ant project layout (build.xml + nbproject)
+  - Frontend: JSP + vanilla JS + app.css
+
+Main folders:
+  - src/java/com/cmp/...        Java source (Servlets, DAOs, Utils, Filter)
+  - web/WEB-INF/views/*.jsp     JSP pages (all panels)
+  - web/assets/css/app.css      UI styles
+  - web/WEB-INF/web.xml         Routes + filter + listener
+
+Request flow (high level):
+  Browser -> (AuthFilter) -> Servlet (/login, /admin, /hod, /clerk, /user)
+          -> DAO -> DB (JDBC via DBUtil)
+          -> forward JSP via ViewUtil OR redirect based on role/action
+
+
+============================================================
+1) URL ROUTES + ENTRY POINTS (web.xml)
+============================================================
+File: web/WEB-INF/web.xml
+
+Filter:
+  - AuthFilter applies to: /* (all requests)
+
+Servlet routes:
+  - /login   -> com.cmp.servlet.LoginServlet
+  - /logout  -> com.cmp.servlet.LogoutServlet
+  - /admin   -> com.cmp.servlet.AdminServlet
+  - /hod     -> com.cmp.servlet.HodServlet
+  - /clerk   -> com.cmp.servlet.ClerkServlet
+  - /user    -> com.cmp.servlet.UserServlet
+
+Listener:
+  - AppBootstrapListener: seeds default admin (if no ADMIN exists).
+
+Welcome file:
+  - index.jsp is configured as welcome file, but the file is not present in this repo.
+    AuthFilter also allows /index.jsp.
+
+
+============================================================
+2) ROLE SYSTEM (WHO CAN ACCESS WHAT)
+============================================================
+Roles stored in `users.role`:
+  - ADMIN, HOD, CLERK, STAFF, STUDENT, CR
+
+Role routing after login:
+  - ADMIN -> /admin
+  - HOD   -> /hod
+  - CLERK -> /clerk
+  - else  -> /user  (covers STAFF/STUDENT/CR)
+
+Authorization rules:
+  - AuthFilter blocks all routes except /login, /index.jsp, /assets/* unless logged in.
+  - Each servlet also enforces role checks:
+      - AdminServlet  requires ADMIN
+      - HodServlet    requires HOD
+      - ClerkServlet  requires CLERK
+      - UserServlet   requires logged-in (any role)
+
+
+============================================================
+3) PANELS (JSP) + FUNCTIONALITY OVERVIEW
+============================================================
+
+------------------------------------------------------------
+3.1) LOGIN PANEL
+View:    web/WEB-INF/views/login.jsp
+Servlet: /login -> com.cmp.servlet.LoginServlet
+DAO:     com.cmp.dao.AuthDao
+------------------------------------------------------------
+Purpose:
+  - Authenticate using email + password.
+  - Redirect user to role dashboard.
+  - Force password change if `users.must_change_password = 1`.
+
+UI:
+  - Email + password form.
+  - Password show/hide toggle.
+  - Client-side email validation (format + normalize lowercase).
+
+Backend functions used:
+  - LoginServlet.doGet(): forward login.jsp
+  - LoginServlet.doPost():
+      - Validates email format
+      - Calls AuthDao.authenticate(email, password)
+      - On success: SessionUtil.login(...)
+      - If mustChangePassword: redirect to `/user?action=changePasswordPage`
+      - Else redirect based on role
+  - AuthDao.authenticate(email, password):
+      - Loads user by email where is_active = 1
+      - Verifies password with PasswordUtil.matches(...)
+      - Returns a Map (id, fullName, email, role, departmentId/name, classId/name, mustChangePassword)
+
+
+------------------------------------------------------------
+3.2) ADMIN PANEL
+View:    web/WEB-INF/views/admin.jsp
+Servlet: /admin -> com.cmp.servlet.AdminServlet
+DAO:     com.cmp.dao.AdminDao
+------------------------------------------------------------
+Purpose:
+  - Create/manage departments.
+  - Create/manage HOD and Clerk accounts.
+  - Assign HOD/Clerk to departments (via department update).
+  - View system stats (department count, user counts, complaints stats).
+  - Show “recent admin activities” notifications.
+
+Main actions (POST /admin):
+  - action=createDepartment
+      Params: name, description, hodUserId (optional), clerkUserId (optional)
+  - action=updateDepartment
+      Params: departmentId, name, description, hodUserId, clerkUserId
+  - action=deleteDepartment
+      Params: departmentId
+  - action=createRoleUser
+      Params: fullName, email, role (HOD/CLERK), departmentId (optional)
+      Result: Generates temp password, saves user, sends email.
+  - action=updateRoleUser
+      Params: userId, role, fullName, email
+  - action=deleteRoleUser
+      Params: userId, role
+  - action=assignDepartment (present in servlet)
+      Params: departmentId, hodUserId, clerkUserId
+      Note: admin.jsp mostly uses updateDepartment for assignment; assignDepartment can be treated as an API.
+  - action=clearDepartments / clearHods / clearClerks (present in servlet)
+      Note: these actions exist server-side; admin.jsp may not render buttons for them.
+
+Notifications:
+  - GET /admin?action=markNotificationsRead returns 204 (client resets count locally).
+  - AdminDao.getRecentAdminActivities() returns latest department/user activity rows.
+
+Client-side validation:
+  - admin.jsp includes JS validation for:
+      - email format + duplicate email (HOD/CLERK)
+      - department name uniqueness, etc.
+
+
+------------------------------------------------------------
+3.3) HOD PANEL (DEPARTMENT ACADEMIC MANAGEMENT)
+View:    web/WEB-INF/views/hod.jsp
+Servlet: /hod -> com.cmp.servlet.HodServlet
+DAO:     com.cmp.dao.HodDao
+------------------------------------------------------------
+Purpose:
+  - Manage classes in the assigned department.
+  - Manage student + staff accounts in the assigned department.
+  - Bulk add students (Name,email list) into a class.
+  - Assign/remove CR (class representative) role for students.
+  - View complaint status summary counts for department.
+  - Show “recent HOD activities” notifications.
+
+Views inside HOD panel:
+  - Uses query param `view` (default overview):
+      - overview, classes, classStudents, staff, cr
+  - Uses query param `classId` for classStudents view.
+
+Main actions (POST /hod):
+  - action=createClass
+      Params: className, expectedStrength
+  - action=updateClass
+      Params: classId, className, expectedStrength
+  - action=deleteClass
+      Params: classId
+  - action=createStudent
+      Params: fullName, email, classId
+      Result: creates account + temp password shown in UI
+  - action=createBulkStudents
+      Params: classId, studentEntries (multiline "Name,email")
+      Result: creates multiple student accounts + returns `bulkCreatedUsers` list
+  - action=updateStudent
+      Params: studentId, fullName, email, classId
+  - action=deleteStudent
+      Params: studentId
+  - action=createStaff
+      Params: fullName, email
+      Result: creates account + temp password shown in UI
+  - action=updateStaff
+      Params: staffId, fullName, email
+  - action=deleteStaff
+      Params: staffId
+  - action=assignCr
+      Params: studentId
+      Rule: max 2 CR per class
+  - action=removeCr
+      Params: studentId
+  - action=clearClasses / clearStudents / clearStaff (present in servlet)
+      Note: server supports clearing; check UI before enabling (it’s destructive).
+
+Notifications:
+  - GET /hod?action=markNotificationsRead returns 204 (client resets count locally).
+  - HodDao.getRecentHodActivities() returns latest class/user activity rows.
+
+Client-side validation:
+  - hod.jsp includes JS validation for:
+      - email format and duplicate checks (based on current page data)
+      - bulk list format and duplicates
+
+
+------------------------------------------------------------
+3.4) CLERK PANEL (COMPLAINT DESK)
+View:    web/WEB-INF/views/clerk.jsp
+Servlet: /clerk -> com.cmp.servlet.ClerkServlet
+DAO:     com.cmp.dao.ClerkDao
+------------------------------------------------------------
+Purpose:
+  - Show active complaints assigned to this clerk (non-SOLVED).
+  - Update complaint status + remarks.
+  - Show resolved history (SOLVED).
+  - Notification badge based on `complaints.clerk_seen` flag.
+
+Main actions (POST /clerk):
+  - action=clearActive
+      Deletes all complaints for this clerk where status <> 'SOLVED'
+  - action=clearHistory
+      Deletes all complaints for this clerk where status = 'SOLVED'
+  - Default (no action set):
+      Updates one complaint:
+        Params: complaintId, status, remarks
+        Status options used in UI: REJECTED, ASSIGNED, SOLVED, PENDING
+
+Notifications:
+  - GET /clerk?action=markNotificationsRead
+      - Calls ClerkDao.markClerkSeen(clerkId)
+      - returns 204
+
+Important rule:
+  - ClerkDao.updateStatus blocks updates if complaint is already SOLVED.
+  - If status changes, it inserts a notification for the user (raised_by).
+
+
+------------------------------------------------------------
+3.5) USER PANEL (STUDENT / STAFF / CR)
+View:    web/WEB-INF/views/user.jsp
+Servlet: /user -> com.cmp.servlet.UserServlet
+DAO:     com.cmp.dao.UserDao
+------------------------------------------------------------
+Purpose:
+  - Submit new complaints to department clerk.
+  - See complaint history.
+  - Edit complaints only when:
+      - status is REJECTED, AND
+      - within COMPLAINT_EDIT_WINDOW_MINUTES (default 30 minutes).
+  - See notifications (from clerk status changes).
+  - Mark notifications read.
+  - Change password (first login flow).
+  - Attachment streaming endpoints exist in UserServlet (see notes below).
+
+Main actions (GET /user):
+  - action=markNotificationsRead
+      Marks notifications.is_read=1 for the user, returns 204.
+  - action=changePasswordPage
+      Forwards change-password.jsp.
+  - action=downloadAttachment / viewAttachment
+      Streams file from `/uploads` (force download vs inline view).
+      Params: file (stored name), name (original name, optional)
+  - No action:
+      Loads complaints + notification counts and shows user.jsp
+      Note: if role is ADMIN/HOD/CLERK it redirects to their dashboards instead.
+
+Main actions (POST /user):
+  - action=changePassword
+      Params: newPassword
+      Calls AuthDao.changePassword(userId, newPassword) and clears must_change_password.
+  - action=createComplaint
+      Params: scope (SELF / CLASS), title, description
+      Notes:
+        - CLASS scope only works if role is CR AND user has classId (server uses user.classId)
+        - Duplicate complaint prevention (same user, same scope/title/desc, and not SOLVED)
+        - Attachment saving is supported server-side (see notes below)
+  - action=editComplaint
+      Params: complaintId, title, description
+      Rule:
+        - only if raised_by matches
+        - only if status is REJECTED
+        - only if within edit window (minutes)
+  - action=clearHistory
+      Deletes all complaints raised by this user (server supports it)
+      Note: user.jsp currently does not show a “clear history” button.
+
+Attachment note (important):
+  - UserServlet supports multipart upload under `Part attachment` and stores it under `/uploads`.
+  - Current user.jsp does not include a file input or multipart form encoding, so attachment upload
+    is effectively “backend-ready but UI-missing”.
+
+
+------------------------------------------------------------
+3.6) CHANGE PASSWORD PAGE
+View:    web/WEB-INF/views/change-password.jsp
+Servlet: /user (POST changePassword)
+------------------------------------------------------------
+Purpose:
+  - Force password change after first login (must_change_password).
+Action:
+  - POST /user with action=changePassword and newPassword.
+
+
+============================================================
+4) BACKEND MODULES (CLASSES + FUNCTIONS)
+============================================================
+
+------------------------------------------------------------
+4.1) Filter
+------------------------------------------------------------
+Class: com.cmp.filter.AuthFilter
+File: src/java/com/cmp/filter/AuthFilter.java
+Key functions:
+  - doFilter(...):
+      - Allows /login, /index.jsp, and /assets/*
+      - Redirects to /login if user is not logged in
+      - Otherwise passes request to target
+
+
+------------------------------------------------------------
+4.2) Listener / Bootstrap
+------------------------------------------------------------
+Class: com.cmp.listener.AppBootstrapListener
+File: src/java/com/cmp/listener/AppBootstrapListener.java
+Key functions:
+  - contextInitialized(...):
+      - Calls ensureDefaultAdmin()
+  - ensureDefaultAdmin():
+      - Checks if any ADMIN exists
+      - If not, inserts default admin from AppConfig (must_change_password = 1)
+
+
+------------------------------------------------------------
+4.3) Config
+------------------------------------------------------------
+Class: com.cmp.config.AppConfig
+File: src/java/com/cmp/config/AppConfig.java
+Key constants:
+  - DB_URL, DB_USER, DB_PASSWORD, DB_DRIVER
+  - DEFAULT_ADMIN_* (seed data)
+  - MAIL_ENABLED + SMTP settings
+  - COMPLAINT_EDIT_WINDOW_MINUTES
+
+Security note:
+  - SMTP_PASSWORD is currently stored in plain text inside source code.
+
+
+------------------------------------------------------------
+4.4) Utilities
+------------------------------------------------------------
+Class: com.cmp.util.DBUtil
+File: src/java/com/cmp/util/DBUtil.java
+Key function:
+  - getConnection():
+      - Loads MySQL driver in static block
+      - Returns JDBC connection using AppConfig DB settings
+
+Class: com.cmp.util.PasswordUtil
+File: src/java/com/cmp/util/PasswordUtil.java
+Key functions:
+  - hash(plainText): SHA-256 hex
+  - matches(plainText, hashed): compares hash
+  - generatePassword(): 10-char temp password
+
+Class: com.cmp.util.SessionUtil
+File: src/java/com/cmp/util/SessionUtil.java
+Key functions:
+  - login(request, userMap): sets session user + role
+  - getUser(request): returns session user
+  - isLoggedIn(request)
+  - hasRole(request, role)
+
+Class: com.cmp.util.ViewUtil
+File: src/java/com/cmp/util/ViewUtil.java
+Key function:
+  - forward(viewName, request, response): forwards to /WEB-INF/views/<viewName>
+
+Class: com.cmp.util.ValidationUtil
+File: src/java/com/cmp/util/ValidationUtil.java
+Key functions:
+  - isValidEmail(email): regex-based validation
+  - normalizeEmailOrThrow(email): lowercases + validates + throws user-friendly message
+
+
+------------------------------------------------------------
+4.5) Mail Transport
+------------------------------------------------------------
+Class: com.cmp.transport.MailTransport
+File: src/java/com/cmp/transport/MailTransport.java
+Key functions:
+  - sendMail(to, subject, temppass, name, role):
+      - Uses JavaMail with SMTP settings from AppConfig
+      - Sends HTML mail with credentials
+  - buildHtml(...): builds the email body
+
+
+------------------------------------------------------------
+4.6) DAOs (DATABASE OPERATIONS)
+------------------------------------------------------------
+Class: com.cmp.dao.AuthDao
+File: src/java/com/cmp/dao/AuthDao.java
+Key functions:
+  - authenticate(email, password): returns user Map if valid credentials
+  - changePassword(userId, newPassword): updates password_hash, clears must_change_password
+
+Class: com.cmp.dao.AdminDao
+File: src/java/com/cmp/dao/AdminDao.java
+Key functions:
+  - getDepartments(): list with current hod/clerk mapping
+  - getUsersByRole(role): list for HOD/CLERK
+  - getRecentAdminActivities(): last 3 departments + last 3 created users
+  - getTotalComplaintCount()
+  - getPendingComplaintCount(): statuses PENDING/ASSIGNED
+  - saveDepartment(name, description, hodId, clerkId)
+  - updateDepartment(departmentId, ...)
+  - assignDepartment(departmentId, hodId, clerkId) (alternative assignment method)
+  - deleteDepartment(departmentId)
+  - saveRoleUser(fullName, email, role, departmentId): validates email + unique, inserts user, sends mail, returns temp password
+  - updateRoleUser(userId, role, fullName, email): validates email + unique
+  - deleteRoleUser(userId, role): deletes user and unassigns from department
+  - clearAllDepartments(), clearRoleUsers(role) (destructive)
+  - refreshDepartmentAssignments(): sync `users.department_id` for HOD/CLERK based on departments table
+  - validateUniqueEmail(email, excludeUserId)
+
+Class: com.cmp.dao.HodDao
+File: src/java/com/cmp/dao/HodDao.java
+Key functions:
+  - getClasses(departmentId)
+  - getStudents(departmentId) / getStaff(departmentId)
+  - getStudentsByClass(departmentId, classId)
+  - getRecentHodActivities(departmentId)
+  - getActiveComplaintCount(departmentId): complaints in PENDING/ASSIGNED
+  - getComplaintStatusCounts(departmentId): counts per status
+  - saveClass(...), updateClass(...), deleteClass(...)
+  - saveStudent(...), saveStaff(...), saveStudentsBulk(...)
+  - updateStudent(...), updateStaff(...)
+  - deleteDepartmentUser(userId, departmentId, allowedRoleGroup)
+  - assignCr(studentId): max 2 CR per class
+  - removeCr(studentId)
+  - clearAllClasses / clearAllStudents / clearAllStaff (destructive)
+  - validateUniqueEmail / validateClassCapacity / validateBulkStudentCapacity / validateStudentClassLocked
+
+Class: com.cmp.dao.ClerkDao
+File: src/java/com/cmp/dao/ClerkDao.java
+Key functions:
+  - getComplaints(clerkId): active (not SOLVED)
+  - getResolvedComplaints(clerkId): SOLVED only
+  - updateStatus(complaintId, status, remarks):
+      - blocks SOLVED complaint updates
+      - updates status + clerk_remarks + updated_at
+      - inserts notification to raised_by if status changed
+  - getUnreadNotificationCount(clerkId): based on complaints.clerk_seen
+  - getRecentComplaintAlerts(clerkId): latest 6 complaints
+  - markClerkSeen(clerkId): sets clerk_seen = 1 for all clerk complaints
+  - clearActiveComplaints(clerkId), clearResolvedHistory(clerkId) (destructive)
+
+Class: com.cmp.dao.UserDao
+File: src/java/com/cmp/dao/UserDao.java
+Key functions:
+  - createComplaint(...):
+      - finds user.department_id
+      - finds departments.clerk_user_id
+      - inserts complaint (supports optional attachment fields)
+      - prevents duplicate “same complaint” until solved (validateDuplicateComplaint)
+  - getComplaintHistory(userId):
+      - returns complaint list with `canEdit` flag (within edit window AND REJECTED)
+      - includes clerk_remarks and attachment fields if available
+  - updateComplaint(complaintId, userId, title, description):
+      - only if REJECTED and within time window
+      - resets clerk_seen = 0
+  - getUserNotificationCount(userId), getRecentNotifications(userId)
+  - markUserNotificationsRead(userId)
+  - clearComplaintHistory(userId) (destructive)
+
+
+------------------------------------------------------------
+4.7) Servlets (CONTROLLERS)
+------------------------------------------------------------
+com.cmp.servlet.LoginServlet
+  - GET: show login
+  - POST: validate + authenticate + session login + role redirect
+
+com.cmp.servlet.LogoutServlet
+  - GET: session invalidate + redirect /login
+
+com.cmp.servlet.AdminServlet
+  - GET: loadDashboard + forward admin.jsp
+  - POST: handles department/user CRUD + forwards admin.jsp
+
+com.cmp.servlet.HodServlet
+  - GET: loadDashboard + forward hod.jsp
+  - POST: handles academic/user management actions + forwards hod.jsp
+  - parseBulkStudents(): validates "Name,email" lines + duplicates in bulk list
+
+com.cmp.servlet.ClerkServlet
+  - GET: loadDashboard + forward clerk.jsp
+  - POST: status updates + clears + forward clerk.jsp
+
+com.cmp.servlet.UserServlet
+  - GET: route based on role, load complaints/notifications, forward user.jsp
+  - POST: changePassword / createComplaint / editComplaint / clearHistory
+  - saveAttachment(): writes to /uploads (multipart)
+  - streamAttachment(): download/view attachment from /uploads
+
+
+============================================================
+5) DATABASE MODEL (INFERRED FROM QUERIES)
+============================================================
+This app assumes (at minimum) these tables:
+
+users:
+  - id (PK)
+  - full_name
+  - email (unique recommended)
+  - password_hash
+  - role  (ADMIN/HOD/CLERK/STAFF/STUDENT/CR)
+  - department_id (FK departments.id, used by most roles)
+  - class_id (FK classes.id, used by STUDENT/CR)
+  - must_change_password (0/1)
+  - is_active (0/1)
+  - created_at (used by “recent activities” queries)
+
+departments:
+  - id (PK)
+  - name
+  - description
+  - hod_user_id   (FK users.id)
+  - clerk_user_id (FK users.id)
+
+classes:
+  - id (PK)
+  - department_id (FK departments.id)
+  - class_name
+  - expected_strength
+
+complaints:
+  - id (PK)
+  - raised_by (FK users.id)
+  - department_id (FK departments.id)
+  - class_id (nullable FK classes.id)
+  - assigned_clerk_id (FK users.id)
+  - complaint_scope (SELF / CLASS)
+  - title
+  - description
+  - status (PENDING / ASSIGNED / REJECTED / SOLVED)
+  - clerk_remarks
+  - clerk_seen (0/1)
+  - created_at, updated_at
+  - attachment_name, attachment_path, attachment_type (optional columns)
+
+notifications:
+  - id (PK) (not explicitly queried, but typical)
+  - user_id (FK users.id)
+  - complaint_id (FK complaints.id)
+  - message
+  - is_read (0/1)
+  - created_at
+
+
+============================================================
+6) IMPORTANT BUSINESS RULES / CONSTRAINTS
+============================================================
+Email:
+  - Normalized to lowercase + validated with regex server-side.
+  - Uniqueness is enforced via DAO validation before insert/update.
+
+Password:
+  - Stored as SHA-256 hash (PasswordUtil).
+  - New accounts get a generated temp password (email sent).
+  - First login requires changePassword flow (must_change_password).
+
+Complaint lifecycle:
+  - Created as PENDING, assigned to department clerk.
+  - Clerk can update status and add remarks.
+  - When status changes, a notification is inserted for the user.
+
+Complaint editing:
+  - A user can edit only if:
+      - status = REJECTED
+      - within COMPLAINT_EDIT_WINDOW_MINUTES (default 30)
+
+CR assignment:
+  - Max 2 CR per class.
+
+Class capacity:
+  - Students+CR count cannot exceed classes.expected_strength.
+  - Bulk add also validates remaining seats.
+
+
+============================================================
+7) BUILD / DEPLOY NOTES
+============================================================
+Project build:
+  - build.xml is a NetBeans-managed Ant build wrapper.
+  - This environment did not have `ant` available; compile checks were done using `javac`.
+
+Runtime dependencies:
+  - MySQL connector JAR exists under web/WEB-INF/lib
+  - JavaMail JARs exist under web/WEB-INF/lib
+  - Servlet container (Tomcat/GlassFish) provides Servlet API at runtime.
+
+
+============================================================
+8) KNOWN GAPS / IMPROVEMENT IDEAS (FYI)
+============================================================
+1) Missing `web/index.jsp` while web.xml expects it as welcome file.
+2) UserServlet supports attachments, but user.jsp has no file input / multipart form.
+3) SMTP password is hard-coded in AppConfig.java; move to environment or secure config.
+4) Some “clear all” actions exist in servlets but may not be exposed in UI (verify before use).
+

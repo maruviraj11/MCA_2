@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Deshbored</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js"></script>
+    
+</head>
+<body>
+    <div class="page-content" id="page-admin-dashboard">
+      <div class="section-title">
+        <div>
+          <h2>Dashboard Overview</h2>
+          <p>System-wide statistics and activity</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-sm" onclick="openModal('modal-add-dept')">+ Department</button>
+          <button class="btn-sm accent" onclick="openModal('modal-add-hod')">+ Add HOD</button>
+        </div>
+      </div>
+
+      <!-- Stats — values injected by JS from API response -->
+      <div class="stats-grid">
+        <!-- data-stat="total_departments" -->
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#eef2ff;color:#4f46e5;">🏛️</div>
+          <div class="stat-value" id="stat-departments">—</div>
+          <div class="stat-label">Departments</div>
+        </div>
+        <!-- data-stat="total_hods" -->
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#ecfdf5;color:#059669;">👨‍💼</div>
+          <div class="stat-value" id="stat-hods">—</div>
+          <div class="stat-label">HODs Assigned</div>
+        </div>
+        <!-- data-stat="total_clerks" -->
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fffbeb;color:#d97706;">📋</div>
+          <div class="stat-value" id="stat-clerks">—</div>
+          <div class="stat-label">Clerks Active</div>
+        </div>
+        <!-- data-stat="total_complaints" -->
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fef2f2;color:#dc2626;">📝</div>
+          <div class="stat-value" id="stat-complaints">—</div>
+          <div class="stat-label">Total Complaints</div>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-24">
+        <!-- Department summary table
+             Backend: GET /api/admin/departments?limit=5
+             Rendered by renderAdminDeptSummary(data) in app.js -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Departments</h3>
+            <button class="btn-sm accent" onclick="switchPage('admin-departments')">View All</button>
+          </div>
+          <!-- tbody injected by JS -->
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Department</th><th>HOD</th><th>Clerk</th><th>Complaints</th>
+              </tr>
+            </thead>
+            <tbody id="admin-dept-summary-tbody">
+              <tr><td colspan="4" class="loading-cell">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Activity log
+             Backend: GET /api/admin/activity-log?limit=5
+             Each item: { icon, title, description, time_ago }
+             Rendered by renderActivityLog(data) in app.js -->
+        <div class="card">
+          <div class="card-header"><h3>Recent Activity</h3></div>
+          <div class="card-body">
+            <div class="timeline" id="activity-log-timeline">
+              <div class="loading-cell">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complaint status bar chart
+           Backend: GET /api/admin/complaint-stats
+           Response: { pending, in_progress, solve_pending, resolved }
+           Rendered by renderComplaintStats(data) in app.js -->
+      <div class="card">
+        <div class="card-header"><h3>Complaint Status Overview</h3></div>
+        <div class="card-body">
+          <div class="status-overview-grid" id="complaint-status-grid">
+            <!-- injected by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+</body>
+</html>

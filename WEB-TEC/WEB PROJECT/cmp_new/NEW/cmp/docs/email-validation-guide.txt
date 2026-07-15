@@ -1,0 +1,328 @@
+EMAIL VALIDATION GUIDE (SERVER + UI)
+Project: Complaint Management Portal (CMP)
+Date: 2026-04-05
+
+============================================================
+1) PURPOSE (WHAT THIS DOES)
+============================================================
+This project now validates email addresses in a consistent way:
+
+1) SERVER-SIDE (Java):
+   - Prevents bad/empty email values from being saved/updated in DB.
+   - Normalizes emails to lowercase + trimmed (so duplicates like "A@x.com" vs "a@x.com" are treated the same).
+   - Blocks login attempt early if email format is invalid.
+
+2) CLIENT-SIDE (JSP + JavaScript):
+   - Shows immediate error messages near the field (without reloading page).
+   - Normalizes email to lowercase before submit.
+   - (HOD panel) checks duplicate email against existing users visible in the dashboard.
+
+Note: Client-side validation is for better UX only. Server-side validation is the real security/data-integrity gate.
+
+
+============================================================
+2) SERVER-SIDE FUNCTIONS (Java)
+============================================================
+
+------------------------------------------------------------
+2.1) com.cmp.util.ValidationUtil
+File: src/java/com/cmp/util/ValidationUtil.java
+------------------------------------------------------------
+
+Function: isValidEmail(String email)
+What it does:
+  - Returns true only if:
+      - email is not null
+      - email.trim().toLowerCase() is not empty
+      - email matches this regex:
+          ^[^\s@]+@[^\s@]+\.[^\s@]+$
+Why needed:
+  - Allows quick boolean checks before proceeding (login, conditional flows).
+Where to use:
+  - Any place you just want to check validity and decide what to do next.
+Examples of current usage:
+  - src/java/com/cmp/dao/AuthDao.java
+  - src/java/com/cmp/servlet/LoginServlet.java
+
+
+Function: normalizeEmailOrThrow(String email)
+What it does:
+  - Normalizes: trim + lowercase
+  - If invalid format => throws RuntimeException("Enter a valid email address.")
+Why needed:
+  - One-liner to enforce normalization + validation.
+  - Keeps all server-side code consistent with the same validation rule and same message.
+Where to use:
+  - Any “save/update” flow where email is stored or used as a key.
+Examples of current usage:
+  - src/java/com/cmp/dao/AdminDao.java (create/update HOD/CLERK)
+  - src/java/com/cmp/dao/HodDao.java (create/update STUDENT/STAFF)
+  - src/java/com/cmp/servlet/AdminServlet.java (normalizes before save/update)
+  - src/java/com/cmp/servlet/HodServlet.java (normalizes before save/update + bulk parsing)
+
+
+------------------------------------------------------------
+2.2) AuthDao.authenticate(String email, String password)
+File: src/java/com/cmp/dao/AuthDao.java
+------------------------------------------------------------
+
+Function: authenticate(String email, String password)
+What changed:
+  - Email is validated using ValidationUtil.isValidEmail(email)
+  - If invalid => returns null immediately (no DB query)
+  - If valid => email is normalized to trim+lowercase before DB query
+Why:
+  - Avoids querying DB for obviously invalid input.
+  - Makes login consistent with how emails are stored (lowercase).
+Where it applies:
+  - Login flow (LoginServlet.doPost).
+
+
+------------------------------------------------------------
+2.3) LoginServlet.doPost(HttpServletRequest, HttpServletResponse)
+File: src/java/com/cmp/servlet/LoginServlet.java
+------------------------------------------------------------
+
+Function: doPost(...)
+What changed:
+  - Checks ValidationUtil.isValidEmail(email) before calling AuthDao.authenticate(...)
+  - If invalid => sets error: "Enter a valid email address." and forwards back to login.jsp
+Why:
+  - Gives user a clear “invalid email” message rather than generic login failure.
+Where it applies:
+  - /login POST.
+
+
+------------------------------------------------------------
+2.4) AdminDao email validation points
+File: src/java/com/cmp/dao/AdminDao.java
+------------------------------------------------------------
+
+Function: saveRoleUser(String fullName, String email, String role, String departmentId)
+What changed:
+  - email = ValidationUtil.normalizeEmailOrThrow(email)
+  - Then validateUniqueEmail(email, null) checks duplicates in DB.
+Why:
+  - Ensures proper email format + consistent normalization before uniqueness check & insert.
+Where it applies:
+  - Admin panel: create HOD/CLERK.
+
+
+Function: updateRoleUser(int userId, String role, String fullName, String email)
+What changed:
+  - email = ValidationUtil.normalizeEmailOrThrow(email)
+  - validateUniqueEmail(email, userId) ensures no duplicates.
+Where it applies:
+  - Admin panel: edit HOD/CLERK.
+
+
+------------------------------------------------------------
+2.5) HodDao email validation points
+File: src/java/com/cmp/dao/HodDao.java
+------------------------------------------------------------
+
+Function: saveDepartmentUser(...)
+What changed:
+  - email = ValidationUtil.normalizeEmailOrThrow(email)
+  - validateUniqueEmail(email, null)
+Where it applies:
+  - HOD panel: create STUDENT, create STAFF (both call saveDepartmentUser).
+
+
+Function: updateDepartmentUser(...)
+What changed:
+  - email = ValidationUtil.normalizeEmailOrThrow(email)
+  - validateUniqueEmail(email, userId)
+Where it applies:
+  - HOD panel: update STUDENT, update STAFF (both call updateDepartmentUser).
+
+
+------------------------------------------------------------
+2.6) AdminServlet email normalization points
+File: src/java/com/cmp/servlet/AdminServlet.java
+------------------------------------------------------------
+
+Function: doPost(...) cases
+What changed:
+  - createRoleUser: normalizes/validates email before calling dao
+  - updateRoleUser: normalizes/validates email before calling dao
+Why:
+  - Fail fast and provide consistent validation errors.
+Where it applies:
+  - /admin POST actions.
+
+
+------------------------------------------------------------
+2.7) HodServlet email normalization points (including bulk)
+File: src/java/com/cmp/servlet/HodServlet.java
+------------------------------------------------------------
+
+Function: doPost(...) cases
+What changed:
+  - createStudent/createStaff: normalizeEmailOrThrow before dao call
+  - updateStudent/updateStaff: normalizeEmailOrThrow before dao call
+Where it applies:
+  - /hod POST actions.
+
+
+Function: parseBulkStudents(String studentEntries)
+What changed:
+  - Email now uses ValidationUtil.normalizeEmailOrThrow(parts[1])
+  - If invalid => throws: "Invalid email at line X."
+  - Duplicate in the bulk list is still detected with seenEmails.
+Why:
+  - Bulk add uses the same email rule as single add.
+Where it applies:
+  - HOD panel: Bulk Add Students.
+
+
+============================================================
+3) CLIENT-SIDE FUNCTIONS (JSP + JavaScript)
+============================================================
+
+------------------------------------------------------------
+3.1) login.jsp client validation
+File: web/WEB-INF/views/login.jsp
+------------------------------------------------------------
+
+Block: (function () { ... })()
+What it does:
+  - On submit:
+      - Clears old validation error
+      - Normalizes email to lowercase + trimmed (updates the input value)
+      - Validates email with same regex as server side
+      - If invalid: prevents submit and shows "Enter a valid email address."
+
+Functions inside the block:
+  - clearEmailError()
+      Removes `.field-error` class and removes `.validation-text` under the email field.
+
+  - showEmailError(message)
+      Adds `.field-error` class and appends a `.validation-text` message under the field.
+
+  - normalizeEmail(value)
+      Returns trimmed + lowercase string.
+
+  - isValidEmail(value)
+      Regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+Where to apply:
+  - Any login-like form with a single email field.
+Notes:
+  - Server-side still validates (LoginServlet + AuthDao).
+
+
+------------------------------------------------------------
+3.2) hod.jsp client validation (create/edit + duplicates + bulk)
+File: web/WEB-INF/views/hod.jsp
+------------------------------------------------------------
+
+Block: (function () { ... })()
+What it does:
+  - Builds a JS array `existingEmails` from students + staff already shown on the page.
+  - Validates email format and checks for duplicates before submit.
+  - Normalizes the email field value to lowercase before submit.
+  - Validates bulk list format (Name,email), validates each email, blocks duplicates
+    and blocks already-existing emails.
+
+Functions inside the block:
+  - normalize(value)
+      Trims, collapses whitespace, lowercases.
+
+  - clearErrors(form)
+      Removes `.field-error` and `.validation-text` nodes inside the form.
+
+  - showError(field, message)
+      Adds `.field-error` to the field and adds `.validation-text` message under it.
+
+  - isValidEmail(value)
+      Regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  - emailExists(emailValue, excludeUserId)
+      Checks if emailValue is already present in `existingEmails`, excluding the current
+      user id (used during edit).
+
+  - validatePersonForm(form, excludeUserId)
+      Validates:
+        - fullName length >= 3
+        - email format valid
+        - email not duplicate (existingEmails) except current edit id
+      Normalizes emailField.value before submit.
+
+  - validateBulkForm(form)
+      Validates `textarea[name="studentEntries"]`:
+        - each non-empty line is "Name,email"
+        - name length >= 3
+        - email format valid
+        - no duplicates inside bulk list
+        - not already existing in system (existingEmails)
+
+  - bindForm(selector, validator)
+      Attaches submit handler and prevents submit if validator returns false.
+
+Where to apply:
+  - Any dashboard where you show existing user emails and want instant duplicate checks.
+Important:
+  - This only checks duplicates for records already rendered on the page.
+  - Real duplicate enforcement is server-side (DB check in validateUniqueEmail).
+
+
+============================================================
+4) WHERE THIS IS APPLIED RIGHT NOW (QUICK LIST)
+============================================================
+
+Server-side (always enforced):
+  - Login:
+      - src/java/com/cmp/servlet/LoginServlet.java
+      - src/java/com/cmp/dao/AuthDao.java
+  - Admin create/update HOD/CLERK:
+      - src/java/com/cmp/servlet/AdminServlet.java
+      - src/java/com/cmp/dao/AdminDao.java
+  - HOD create/update STUDENT/STAFF + bulk:
+      - src/java/com/cmp/servlet/HodServlet.java
+      - src/java/com/cmp/dao/HodDao.java
+
+Client-side (UX validation):
+  - Login page:
+      - web/WEB-INF/views/login.jsp
+  - HOD dashboard:
+      - web/WEB-INF/views/hod.jsp
+  - Admin dashboard:
+      - web/WEB-INF/views/admin.jsp already has its own JS email validation + duplicate check logic.
+
+
+============================================================
+5) HOW TO APPLY THIS TO OTHER PANELS (IF YOU ADD MORE FORMS)
+============================================================
+
+If you create any new form with an email input:
+
+A) ALWAYS add server-side validation:
+  - In the servlet:
+      - Use ValidationUtil.normalizeEmailOrThrow(request.getParameter("email"))
+      - Pass the normalized email into the DAO.
+  - In the DAO (extra safety):
+      - Normalize again before DB write:
+          email = ValidationUtil.normalizeEmailOrThrow(email);
+
+B) OPTIONAL (recommended) client-side validation:
+  - Copy the login.jsp style for a simple single-field email check.
+  - If you need duplicate checking:
+      - Build a JS array of existing emails (like hod.jsp/admin.jsp)
+      - Validate uniqueness before submit.
+
+
+============================================================
+6) KNOWN LIMITATIONS / NOTES
+============================================================
+1) Regex is a practical, not “perfect”, email validator.
+   - It rejects obviously invalid values and accepts most real emails.
+
+2) Duplicate checks:
+   - Client-side duplicate checks only see emails present in the rendered page.
+   - Server-side duplicate checks are authoritative (DB query).
+
+3) Compilation in this environment:
+   - DAO/util compilation was verified.
+   - Full servlet compilation depends on having Servlet API libraries in the build path.
+

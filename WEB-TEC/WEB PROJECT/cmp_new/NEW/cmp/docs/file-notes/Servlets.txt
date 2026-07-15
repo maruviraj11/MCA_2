@@ -1,0 +1,7 @@
+Servlet summary:
+LoginServlet -> login and route.
+LogoutServlet -> logout.
+AdminServlet -> admin dashboard actions.
+HodServlet -> HOD dashboard actions.
+ClerkServlet -> clerk dashboard actions.
+UserServlet -> student/CR/staff dashboard and password change.

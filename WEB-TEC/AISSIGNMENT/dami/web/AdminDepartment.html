@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Department</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js"></script>
+    
+</head>
+<body>
+    <div class="page-content" id="page-admin-departments">
+      <div class="section-title">
+        <div><h2>Departments</h2><p>Manage departments, assign HOD &amp; Clerk</p></div>
+        <button class="btn-sm accent" onclick="openModal('modal-add-dept')">+ Add Department</button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <!-- oninput calls filterDeptTable(this.value) in app.js -->
+          <input type="text" placeholder="Search departments..."
+                 oninput="filterTable('admin-dept-tbody', this.value)">
+        </div>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Dept ID</th><th>Department Name</th><th>HOD Assigned</th>
+              <th>Clerk Assigned</th><th>Students</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <!-- Rows injected by renderDepartmentsTable(data) in app.js -->
+          <!-- Each row needs data-id="dept.id" for edit/delete/assign -->
+          <tbody id="admin-dept-tbody">
+            <tr><td colspan="7" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+</body>
+</html>

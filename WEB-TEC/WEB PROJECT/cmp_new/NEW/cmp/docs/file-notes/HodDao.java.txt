@@ -1,0 +1,1 @@
+Creates classes, students, staff and assigns CR for a class.

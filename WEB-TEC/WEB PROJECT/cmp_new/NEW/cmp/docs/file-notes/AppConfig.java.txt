@@ -1,0 +1,1 @@
+Stores DB settings, default admin login and application-level constants.

@@ -1,0 +1,1 @@
+Creates departments, HODs, clerks and manages department assignment.

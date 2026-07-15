@@ -1,0 +1,170 @@
+/*
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css to edit this template
+*/
+/* 
+    Created on : 04-Apr-2026, 8:30:13 pm
+    Author     : admin
+*/
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Body */
+body {
+    background: linear-gradient(to right, #eaeaea, #f8f8f8);
+}
+
+/* Container */
+.container {
+    width: 420px;
+    margin: 60px auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Heading */
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #111;
+}
+
+/* Labels */
+label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Inputs */
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: 0.3s;
+}
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin: 6px 0 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    transition: 0.3s;
+}
+
+
+/* Input Focus */
+input[type="text"]:focus {
+    border-color: #000;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+input[type="number"]:focus {
+    border-color: #000;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+}
+
+/* Button */
+input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background: #000;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+/* Button Hover */
+input[type="submit"]:hover {
+    background: #333;
+}
+
+/* Table */
+table {
+    width: 90%;
+    margin: 40px auto;
+    border-collapse: collapse;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background: #fff;
+}
+
+/* Table Header */
+th {
+    background: #000;
+    color: #fff;
+    padding: 12px;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+/* Table Data */
+td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Row Hover */
+tr:hover {
+    background: #f5f5f5;
+}
+
+/* Links */
+a {
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* Edit Button */
+a[href*="edit"] {
+    background: #000;
+    color: #fff;
+}
+
+/* Delete Button */
+a[href*="delete"] {
+    background: #fff;
+    color: #000;
+    border: 1px solid #000;
+}
+
+/* Hover Effects */
+a:hover {
+    opacity: 0.8;
+}
+
+/* Add Book Button */
+.add-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #000;
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+.add-btn:hover {
+    background: #333;
+}

@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+    TODO define vocabulary identification
+    PUBLIC ID: -//vendor//vocabulary//EN
+    SYSTEM ID: http://server/path/vv.dtd
+
+-->
+
+<!--
+    An example how to use this DTD from your XML document:
+
+    <?xml version="1.0"?>
+
+    <!DOCTYPE planner SYSTEM "vv.dtd">
+
+    <planner>
+    ...
+    </planner>
+-->
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT planner (year)*>
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT year (date)*>
+<!ATTLIST year
+    value CDATA #IMPLIED
+  >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT date (note)*>
+<!ATTLIST date
+    month CDATA #IMPLIED
+    day CDATA #IMPLIED
+  >
+
+<!--- Put your DTDDoc comment here. -->
+<!ELEMENT note (#PCDATA)>

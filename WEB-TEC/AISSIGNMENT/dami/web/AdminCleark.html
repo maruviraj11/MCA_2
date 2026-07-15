@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Clerk</title>
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js"></script>
+    
+</head>
+<body>
+    <div class="page-content" id="page-admin-clerks">
+      <div class="section-title">
+        <div><h2>Clerks</h2><p>Manage clerk accounts and assignments</p></div>
+        <button class="btn-sm accent" onclick="openModal('modal-add-clerk')">+ Add Clerk</button>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Department</th><th>Complaints Handled</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <!-- Rows injected by renderClerkTable(data) in app.js -->
+          <tbody id="admin-clerk-tbody">
+            <tr><td colspan="6" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+CREATE TABLE users (
+    email VARCHAR(100) PRIMARY KEY,
+    password VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    mobile VARCHAR(15)
+);
+
+CREATE TABLE user_role (
+    email VARCHAR(100),
+    role VARCHAR(50),
+    FOREIGN KEY (email) REFERENCES users(email)
+);

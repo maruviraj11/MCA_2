@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE studentlist SYSTEM "student.dtd">
+
+<studentlist>
+
+    <student id="s1">
+
+        <enrollmentno>101</enrollmentno>
+
+        <name>
+            <firstname>Viraj</firstname>
+            <middlename>Kumar</middlename>
+            <lastname>Maru</lastname>
+        </name>
+
+        <study_program>MSc</study_program>
+
+        <enrolment_year>2024</enrolment_year>
+
+    </student>
+
+    <student id="s2">
+
+        <enrollmentno>102</enrollmentno>
+
+        <name>
+            <firstname>Rahul</firstname>
+            <lastname>Patel</lastname>
+        </name>
+
+        <study_program>MBA</study_program>
+
+        <enrolment_year>2023</enrolment_year>
+
+    </student>
+
+</studentlist>

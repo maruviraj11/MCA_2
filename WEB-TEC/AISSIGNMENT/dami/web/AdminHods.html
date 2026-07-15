@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Hods</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js"></script>
+    
+</head>
+<body>
+    <div class="page-content" id="page-admin-hods">
+      <div class="section-title">
+        <div><h2>Head of Departments</h2><p>Create and manage HOD accounts</p></div>
+        <button class="btn-sm accent" onclick="openModal('modal-add-hod')">+ Add HOD</button>
+      </div>
+      <div class="card">
+        <table class="data-table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Department</th><th>Phone</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <!-- Rows injected by renderHodTable(data) in app.js -->
+          <tbody id="admin-hod-tbody">
+            <tr><td colspan="6" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+</body>
+</html>

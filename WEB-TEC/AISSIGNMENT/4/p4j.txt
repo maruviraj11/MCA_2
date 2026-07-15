@@ -1,0 +1,51 @@
+import java.io.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.sql.*;
+
+public class LoginServlet extends HttpServlet {
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        String email = request.getParameter("email");
+        String password = request.getParameter("password");
+
+        response.setContentType("text/html");
+        PrintWriter out = response.getWriter();
+
+        try {
+
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Connection con = DriverManager.getConnection(
+                    "jdbc:mysql://localhost:3306/yourdbname",
+                    "root",
+                    "password");
+
+            PreparedStatement ps = con.prepareStatement(
+                    "SELECT * FROM users WHERE email=? AND password=?");
+
+            ps.setString(1, email);
+            ps.setString(2, password);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+
+                // User exists → Redirect to Home Page
+                response.sendRedirect("home.jsp");
+
+            } else {
+
+                out.println("<h3 style='color:red;text-align:center;'>Invalid Email or Password</h3>");
+                RequestDispatcher rd = request.getRequestDispatcher("login.html");
+                rd.include(request, response);
+            }
+
+            con.close();
+
+        } catch (Exception e) {
+            out.println(e);
+        }
+    }
+}

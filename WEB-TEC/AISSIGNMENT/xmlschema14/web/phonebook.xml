@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phonebook xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:noNamespaceSchemaLocation="phonebook.xsd">
+
+    <department>
+
+        <deptname>Computer Science</deptname>
+        <deptphone>0791234567</deptphone>
+        <deptemail>cs@college.com</deptemail>
+
+        <employee id="e1">
+            <empid>101</empid>
+            <empname>Viraj Maru</empname>
+            <empphone>9876543210</empphone>
+            <empemail>viraj@gmail.com</empemail>
+        </employee>
+
+        <employee id="e2">
+            <empid>102</empid>
+            <empname>Rahul Patel</empname>
+            <empphone>9876500000</empphone>
+            <empemail>rahul@gmail.com</empemail>
+        </employee>
+
+    </department>
+
+</phonebook>

@@ -1,0 +1,29 @@
+Complaint Management Project Structure
+=====================================
+
+src/java/com/cmp/config/AppConfig.java
+Application constants: DB config, default admin, mail toggle, edit window.
+
+src/java/com/cmp/util/*.java
+Shared utility classes for DB, password hashing, mail fallback, session and JSP forwarding.
+
+src/java/com/cmp/dao/*.java
+DAO layer for authentication, admin setup, HOD operations, clerk workflow and user complaints.
+
+src/java/com/cmp/listener/AppBootstrapListener.java
+Adds default admin on startup if no admin exists.
+
+src/java/com/cmp/filter/AuthFilter.java
+Protects internal pages from unauthenticated access.
+
+src/java/com/cmp/servlet/*.java
+Role-based controllers for login/logout/admin/hod/clerk/user.
+
+web/assets/css/app.css
+Shared professional UI styling.
+
+web/WEB-INF/views/*.jsp
+Login, change password and dashboard screens for each role.
+
+docs/database_schema.sql
+MySQL schema and default admin insert script.

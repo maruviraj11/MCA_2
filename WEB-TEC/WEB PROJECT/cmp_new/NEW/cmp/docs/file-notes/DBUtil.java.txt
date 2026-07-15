@@ -1,0 +1,1 @@
+Loads MySQL driver and returns JDBC connection objects used by DAO classes.

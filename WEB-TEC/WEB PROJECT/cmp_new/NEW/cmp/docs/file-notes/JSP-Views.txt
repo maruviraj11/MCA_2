@@ -1,0 +1,7 @@
+JSP summary:
+login.jsp -> sign in page.
+change-password.jsp -> first-login password update page.
+admin.jsp -> department/HOD/clerk management page.
+hod.jsp -> class/student/staff/CR management page.
+clerk.jsp -> complaint handling page.
+user.jsp -> complaint submit/history page.
